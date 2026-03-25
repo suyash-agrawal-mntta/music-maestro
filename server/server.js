@@ -88,17 +88,22 @@ app.get("/callback", async (req, res) => {
       {
         name: "My AI Playlist 🎧",
         description: "Created using AI",
-        public: true,
+        public: false,
+        collaborative: false,
       },
       {
         headers: {
           Authorization: "Bearer " + access_token,
           "Content-Type": "application/json",
+          Accept: "application/json",
         },
       },
     );
 
     const playlistId = playlistResponse.data.id;
+    const playlistUrl = playlistResponse.data.href;
+
+    console.log("PLAYLIST URL:", playlistUrl);
 
     console.log("PLAYLIST CREATED ✅", playlistResponse.data.name);
 
@@ -110,7 +115,7 @@ app.get("/callback", async (req, res) => {
           Authorization: "Bearer " + access_token,
         },
         params: {
-          q: "blinding lights",
+          q: "The Weeknd Starboy",
           type: "track",
           limit: 1,
         },
@@ -118,6 +123,10 @@ app.get("/callback", async (req, res) => {
     );
 
     const track = searchResponse.data.tracks.items[0];
+
+    if (!track) {
+      throw new Error("No track found");
+    }
     const trackUri = track.uri;
 
     console.log("FOUND SONG ✅", track.name, "-", track.artists[0].name);
@@ -132,6 +141,7 @@ app.get("/callback", async (req, res) => {
         headers: {
           Authorization: "Bearer " + access_token,
           "Content-Type": "application/json",
+          Accept: "application/json",
         },
       },
     );
