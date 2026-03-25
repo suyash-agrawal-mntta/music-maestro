@@ -1,5 +1,5 @@
 # AI Playlist Generator 🎧
-
+this in cursor
 This app generates Spotify playlists using AI prompts.
 
 ## Features
