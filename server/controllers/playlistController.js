@@ -7,6 +7,7 @@ import {
   createPlaylist,
   getAccessToken,
   getUserProfile,
+  addTracksToPlaylist,
   searchTrack,
 } from "../services/spotifyService.js";
 import { generateSongsFromPrompt } from "../services/aiService.js";
@@ -111,12 +112,23 @@ export async function callback(req, res) {
       }
     }
 
-    console.log(`Collected ${uris.length} track URIs (not added yet).`);
+    console.log(`Collected ${uris.length} valid track URIs.`);
+
+    if (uris.length > 0) {
+      // Add ALL tracks in one batch request.
+      step = "add_tracks_to_playlist";
+      console.log(`Adding ${uris.length} tracks to playlist...`);
+      await addTracksToPlaylist(access_token, playlistId, uris);
+      console.log("Tracks added to playlist ✅");
+    } else {
+      console.log("No valid tracks found; skipping playlist add.");
+    }
 
     // Final response
-    res.send(
-      `🎧 Playlist created.<br/>Collected ${uris.length} track URIs (not added yet).<br/><a href="${playlistUrl}" target="_blank" rel="noreferrer">Open playlist</a>`,
-    );
+    res.json({
+      message: "Playlist created successfully",
+      totalTracks: uris.length,
+    });
   } catch (error) {
     const status = error.response?.status;
     const spotifyError = error.response?.data;
