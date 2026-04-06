@@ -3,27 +3,47 @@ import { env } from "../config/env.js";
 
 function extractJsonArray(text) {
   if (typeof text !== "string") return null;
-  const start = text.indexOf("[");
-  const end = text.lastIndexOf("]");
+  
+  // 🧹 Robust Sanitization: LLMs sometimes include broken escape characters like \ or unescaped quotes.
+  // We'll strip them out to avoid SyntaxErrors before parsing.
+  const cleanedText = text
+    .replace(/\\(?!["\\\/bfnrtu])/g, "") // Remove 'bad' backslashes that aren't valid JSON escapes
+    .trim();
+
+  const start = cleanedText.indexOf("[");
+  const end = cleanedText.lastIndexOf("]");
   if (start === -1 || end === -1 || end <= start) return null;
 
-  const candidate = text.slice(start, end + 1);
-  return JSON.parse(candidate);
+  const candidate = cleanedText.slice(start, end + 1);
+  
+  try {
+    return JSON.parse(candidate);
+  } catch (err) {
+    console.error("🛑 FAILED TO PARSE AI JSON:", err.message);
+    console.warn("MALFORMED JSON STRING:", candidate);
+    return null; // We return null so the 'fallback' logic in generateSongs can take over
+  }
 }
 
-function normalizeSongs(linesOrItems) {
+function normalizeSongs(rawText) {
   const out = [];
+  // Split by newlines, but also handle cases where AI might use other delimiters
+  const lines = rawText.split(/\n/);
 
-  for (const item of linesOrItems) {
-    if (typeof item !== "string") continue;
-    let s = item.trim();
+  for (const line of lines) {
+    let s = line.trim();
+    if (!s) continue;
+
+    // 🧹 Clean up common AI prefixes: "1. ", "- ", "   ", etc.
+    // This regex looks for numbering or bullets at the start and removes them
+    s = s.replace(/^[0-9]+[.)]\s*/, "").replace(/^[-*•]\s*/, "").trim();
     if (!s) continue;
 
     // Normalize dash variants to " - "
     s = s.replaceAll("\u2013", "-").replaceAll("\u2014", "-");
 
-    // Extract "Artist - Song" even if spacing is inconsistent.
-    const match = s.match(/^(.+?)\s*-\s*(.+)$/);
+    // Extract "Artist - Song". We'll also try to handle "Artist: Song" just in case.
+    const match = s.match(/^(.+?)\s*[-:]\s*(.+)$/);
     if (!match) continue;
 
     const artist = match[1].trim();
@@ -37,20 +57,23 @@ function normalizeSongs(linesOrItems) {
 }
 
 /**
- * Hugging Face Inference API call using:
- * - model: mistralai/Mistral-7B-Instruct-v0.2 (overridable via HF_MODEL)
- * - returns exactly 10 strings formatted as: "Artist - Song"
+ * Hugging Face Inference API call using Mistral AI.
+ * Now dynamically requests a list based on user length and mood!
  */
-export async function generateSongsFromPrompt(prompt) {
+export async function generateSongsFromPrompt(prompt, count = 10, mood = "neutral") {
   if (typeof prompt !== "string" || !prompt.trim()) {
     throw new Error("Prompt must be a non-empty string");
   }
 
   if (!env.HF_API_KEY) {
-    throw new Error("HF_API_KEY is not set");
+    throw new Error("HF_API_KEY is not set. Please check your .env file.");
   }
 
   const client = new InferenceClient(env.HF_API_KEY);
+  
+  // We ask for a healthy buffer to ensure we hit the user's requested count
+  const bufferCount = Math.max(5, Math.ceil(count * 0.3)); 
+  const requestedCount = Number(count) + bufferCount;
 
   async function fetchSongs(userMessage, expectedCount) {
     let result;
@@ -62,59 +85,31 @@ export async function generateSongsFromPrompt(prompt) {
           {
             role: "system",
             content:
-              `You are a music recommendation assistant. ` +
-              `Reply with ONLY a valid JSON array of exactly ${expectedCount} strings. ` +
-              'Each string must be in the format "Artist - Song" (hyphen surrounded by spaces). ' +
-              "No markdown, no numbering, no extra text.",
+              `You are a professional music curator. Vibe/Mood: ${mood}. ` +
+              `Provide a list of EXACTLY ${expectedCount} unique songs. ` +
+              'Format EACH line as: Artist - Song. ' +
+              "DO NOT include any JSON, numbering, quotes, or introduction. Just the list.",
           },
           { role: "user", content: userMessage },
         ],
-        max_tokens: 1024,
+        max_tokens: 2048,
         temperature: 0.7,
       });
     } catch (err) {
       throw new Error(err?.message || "Hugging Face request failed");
     }
 
-    const rawText =
-      result?.choices?.[0]?.message?.content ||
-      (typeof result === "string" ? result : null) ||
-      result?.generated_text ||
-      result?.[0]?.generated_text ||
-      result?.[0]?.summary_text ||
-      "";
-
-    const parsed = extractJsonArray(rawText);
-    const fromJson = Array.isArray(parsed) ? normalizeSongs(parsed) : [];
-    const fromLines = normalizeSongs(rawText.split("\n"));
-    const songs = fromJson.length >= fromLines.length ? fromJson : fromLines;
-
-    return songs.slice(0, expectedCount);
+    const rawText = result?.choices?.[0]?.message?.content || "";
+    return normalizeSongs(rawText);
   }
 
-  const baseSongs = await fetchSongs(prompt.trim(), 10);
-  const uniqueSongs = [...new Set(baseSongs)];
-
-  if (uniqueSongs.length >= 10) return uniqueSongs.slice(0, 10);
-
-  // Ask for the remaining songs while explicitly excluding what we already have.
-  const needed1 = 10 - uniqueSongs.length;
-  const excludeList = uniqueSongs.join(", ");
-  const followupMessage =
-    `Vibe/theme: "${prompt.trim()}". ` +
-    `Generate exactly ${needed1} more UNIQUE songs. ` +
-    `Do NOT repeat these: ${excludeList}. ` +
-    "Return ONLY the JSON array.";
-
-  const extraSongs = await fetchSongs(followupMessage, needed1);
-  const merged = [...new Set([...uniqueSongs, ...extraSongs])];
-
-  if (merged.length < 10) {
-    throw new Error(
-      `Expected 10 songs, but only got ${merged.length}. (Initial: ${uniqueSongs.length}, extra: ${extraSongs.length})`,
-    );
-  }
-
-  return merged.slice(0, 10);
+  console.log(`🤖 Requesting ${requestedCount} songs from Mistral for mood: ${mood}`);
+  const songs = await fetchSongs(prompt.trim(), requestedCount);
+  
+  // Dedup and slice down to exactly what the user wanted
+  const uniqueSongs = [...new Set(songs)];
+  console.log(`✅ AI delivered ${uniqueSongs.length} songs.`);
+  
+  return uniqueSongs.slice(0, count);
 }
 

@@ -1,23 +1,70 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { api } from "../services/api";
 
 export function usePlaylist() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [songs, setSongs] = useState([]);
-  const [success, setSuccess] = useState(null);
+  const [user, setUser] = useState(null);
+  const [lastParams, setLastParams] = useState({ prompt: "", length: 15, mood: "Balanced" });
+  
+  // 🔍 URL Listener: Did we just come back from a successful Spotify trip?
+  const searchParams = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+  const [success, setSuccess] = useState(searchParams.get("success") === "true" ? { 
+    isNew: true, 
+    playlistUrl: "https://open.spotify.com/collection/playlists" 
+  } : null);
+
+  const [isSaving, setIsSaving] = useState(searchParams.get("processing") === "true");
+
+  // 🔍 Check for persistence on mount & poll for background job
+  useEffect(() => {
+    let intervalId;
+
+    async function checkStatus() {
+      try {
+        const data = await api.checkAuthStatus();
+        if (data.isConnected && data.user) {
+          setUser(data.user);
+        }
+        
+        if (isSaving && data.job) {
+          if (data.job.status === "done") {
+            setSuccess({ isNew: true, playlistUrl: data.job.playlistUrl });
+            setIsSaving(false);
+          } else if (data.job.status === "error") {
+            setError(data.job.error || "Playlist creation failed");
+            setIsSaving(false);
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch auth status on boot.");
+      }
+    }
+
+    checkStatus();
+
+    if (isSaving) {
+      intervalId = setInterval(checkStatus, 2000);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isSaving]);
 
   const hasSongs = songs.length > 0;
 
   const canCreate = useMemo(() => hasSongs && !loading, [hasSongs, loading]);
 
-  async function generateSongs(prompt, length) {
+  async function generateSongs(prompt, length, mood) {
     setLoading(true);
     setError("");
     setSuccess(null);
 
     try {
-      const data = await api.generatePreview({ prompt, length });
+      setLastParams({ prompt, length, mood });
+      const data = await api.generatePreview({ prompt, length, mood });
       const nextSongs = Array.isArray(data?.songs) ? data.songs : [];
       setSongs(nextSongs);
 
@@ -56,9 +103,15 @@ export function usePlaylist() {
     error,
     songs,
     success,
+    user,
+    isSaving,
     canCreate,
     generateSongs,
     createPlaylist,
+    lastParams,
+    setSuccess,
+    setIsSaving,
+    setSongs,
   };
 }
 

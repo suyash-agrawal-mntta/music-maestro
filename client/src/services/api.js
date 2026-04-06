@@ -24,14 +24,16 @@ async function request(path, options = {}) {
 }
 
 export const api = {
-  getLoginUrl() {
-    return `${BACKEND_BASE}/login`;
+  getLoginUrl(params = {}) {
+    const { prompt = "", length = 10, mood = "Balanced" } = params;
+    const urlParams = new URLSearchParams({ prompt, length, mood });
+    return `${BACKEND_BASE}/login?${urlParams.toString()}`;
   },
 
-  async generatePreview({ prompt, length }) {
+  async generatePreview({ prompt, length, mood }) {
     return request("/generate-playlist/preview", {
       method: "POST",
-      body: JSON.stringify({ prompt, length }),
+      body: JSON.stringify({ prompt, length, mood }),
     });
   },
 
@@ -40,6 +42,10 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ prompt, length, songs }),
     });
+  },
+  
+  async checkAuthStatus() {
+    return request("/status");
   },
 };
 

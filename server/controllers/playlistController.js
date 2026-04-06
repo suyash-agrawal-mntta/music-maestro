@@ -1,8 +1,10 @@
 import {
   createPromptState,
+  decodeState,
   sanitizePrompt,
 } from "../utils/stateUtils.js";
 import { env } from "../config/env.js";
+import { appState } from "../utils/appState.js";
 import {
   createPlaylist,
   getAccessToken,
@@ -19,10 +21,15 @@ export async function login(req, res) {
   const scope =
     "user-read-private user-read-email playlist-modify-public playlist-modify-private";
 
+  // 📥 Extract parameters from Frontend URL
   const prompt = typeof req.query.prompt === "string" ? req.query.prompt.trim() : "";
+  const length = Number(req.query.length) || 15;
+  const mood = typeof req.query.mood === "string" ? req.query.mood : "Balanced";
+
   const safePrompt = sanitizePrompt(prompt, DEFAULT_PROMPT, 200);
 
-  const state = createPromptState(safePrompt);
+  // 🔒 Encode EVERYTHING into the 'state' tunnel
+  const state = createPromptState(safePrompt, length, mood);
 
   const authURL =
     "https://accounts.spotify.com/authorize" +
@@ -36,121 +43,142 @@ export async function login(req, res) {
     "&state=" +
     encodeURIComponent(state);
 
-  console.log("REDIRECT_URI:", env.REDIRECT_URI);
   res.redirect(authURL);
 }
 
 // 🔁 Callback route
 export async function callback(req, res) {
   const code = req.query.code;
+  const state = req.query.state;
 
-  // TODO: keep this hardcoded for now; next step can re-enable prompt from `state`
-  const prompt = "late night drive";
+  // 🔓 Decode our 'Shopping List' (Prompt, Length, Mood) from the state tunnel
+  const { prompt, length, mood } = decodeState(state, { 
+    prompt: DEFAULT_PROMPT, 
+    length: 15, 
+    mood: "Balanced" 
+  });
 
-  // Tracks where failures happen (useful for debugging Spotify 403s)
+  console.log(`📡 Resuming session: "${prompt}" | Tracks: ${length} | Mood: ${mood}`);
+
   let step = "exchange_token";
 
   try {
     // 1️⃣ Exchange code → access token
     const { accessToken, scope } = await getAccessToken(code);
     const access_token = accessToken;
-    console.log("TOKEN SCOPES (granted by Spotify):", scope);
     console.log("ACCESS TOKEN ✅");
 
     // 2️⃣ Get user profile
     step = "profile";
     const userResponse = await getUserProfile(access_token);
     console.log("USER:", userResponse.display_name);
-    console.log("USER DETAILS:", {
+    
+    // 💾 Persist session for reloads
+    appState.setSession({ 
+      name: userResponse.display_name, 
       id: userResponse.id,
-      email: userResponse.email,
+      imageUrl: userResponse.images?.[0]?.url || ""
     });
 
+    // 🚀 Start Background Job
+    appState.setJob({ status: "processing" });
+    createPlaylistBackground(access_token, prompt, length, mood).catch(console.error);
+
+    // 🪄 Instant Return to Frontend with processing flag
+    res.redirect("http://localhost:5173/?processing=true");
+  } catch (error) {
+    console.error("FAILED AT STEP:", step, error.message);
+    res.status(500).send("Playlist creation failed. Please check the server logs.");
+  }
+}
+
+async function createPlaylistBackground(access_token, prompt, length, mood) {
+  try {
     // 3️⃣ Create playlist
-    step = "create_playlist";
     const playlistResponse = await createPlaylist(access_token);
     const playlistId = playlistResponse.id;
-    const playlistUrl = playlistResponse.href;
 
-    console.log("PLAYLIST URL:", playlistUrl);
-    console.log("PLAYLIST CREATED ✅", playlistResponse.name);
-    console.log("PLAYLIST DETAILS:", {
-      owner: playlistResponse.owner?.id,
-      collaborative: playlistResponse.collaborative,
-      isPublic: playlistResponse.public,
-      playlistId: playlistId,
-    });
+    // 4️⃣ Generate songs from AI prompt (Dynamic Count & Mood!)
+    const songs = await generateSongsFromPrompt(prompt, length, mood);
 
-    // 4️⃣ Generate songs from AI prompt (returns ["Artist - Song", ...])
-    step = "ai_generate_songs";
-    const songs = await generateSongsFromPrompt(prompt);
-
-    // 5️⃣ Search Spotify for each AI song, collect unique track URIs
-    step = "search_and_collect_uris";
+    // 5️⃣ Search Spotify for each AI song
     const uris = [];
-    const uriSet = new Set();
-
+    
     for (const song of songs) {
-      if (uriSet.size >= 10) break;
-
+      if (uris.length >= length) break;
       try {
         const { trackUri } = await searchTrack(access_token, song);
-        if (!trackUri) continue;
-
-        // Avoid duplicates (same track found more than once)
-        if (uriSet.has(trackUri)) continue;
-
-        uriSet.add(trackUri);
-        uris.push(trackUri);
+        if (trackUri) uris.push(trackUri);
       } catch (err) {
-        // Skip not found / failed searches, but log for visibility.
-        console.warn(
-          `AI->Spotify search failed for "${song}": ${
-            err?.message || String(err)
-          }`,
-        );
+        console.warn(`Skip: "${song}" not found on Spotify.`);
       }
     }
-
-    console.log(`Collected ${uris.length} valid track URIs.`);
 
     if (uris.length > 0) {
-      // Add ALL tracks in one batch request.
-      step = "add_tracks_to_playlist";
-      console.log(`Adding ${uris.length} tracks to playlist...`);
       await addTracksToPlaylist(access_token, playlistId, uris);
-      console.log("Tracks added to playlist ✅");
-    } else {
-      console.log("No valid tracks found; skipping playlist add.");
+      console.log(`Successfully added ${uris.length} tracks to your new playlist! 🥂`);
     }
 
-    // Final response
-    res.json({
-      message: "Playlist created successfully",
-      totalTracks: uris.length,
+    appState.setJob({ 
+      status: "done", 
+      playlistUrl: playlistResponse.external_urls?.spotify || "https://open.spotify.com/collection/playlists" 
     });
   } catch (error) {
-    const status = error.response?.status;
-    const spotifyError = error.response?.data;
-
-    console.error("SPOTIFY FAILED STEP:", step);
-    console.error("FAILED REQUEST:", {
-      method: error.config?.method,
-      url: error.config?.url,
-      status: status,
-    });
-    console.error("SPOTIFY RESPONSE HEADERS:", error.response?.headers);
-    console.error("FULL ERROR:", spotifyError || error.message);
-    if (spotifyError) {
-      try {
-        console.error("FULL ERROR (JSON):", JSON.stringify(spotifyError, null, 2));
-      } catch {
-        // ignore JSON stringify errors
-      }
-    }
-    console.error("AXIOS ERROR MESSAGE:", error.message);
-
-    res.status(status || 500).send(spotifyError || error.message);
+    console.error("Background Job Error:", error);
+    appState.setJob({ status: "error", error: error.message });
   }
+}
+
+// 🔮 AI Preview Route (Generate songs without triggering Spotify yet)
+export async function generatePreview(req, res) {
+  const { prompt, length = 10, mood = "energetic" } = req.body;
+  
+  if (!prompt) {
+    return res.status(400).json({ error: "Prompt is required" });
+  }
+
+  try {
+    console.log(`🔮 Generating preview for: "${prompt}" | Tracks: ${length} | Mood: ${mood}`);
+    
+    // We pass both parameters to our updated AI service
+    const songsList = await generateSongsFromPrompt(prompt, length, mood);
+    
+    const songs = songsList.map((s, i) => {
+      const [artist, title] = s.split(" - ");
+      return { id: i, artist: artist || "Unknown", title: title || "Unknown" };
+    });
+
+    res.json({ songs });
+  } catch (error) {
+    console.error("AI GENERATION ERROR:", error);
+    res.status(500).json({ error: error.message || "Failed to generate AI response" });
+  }
+}
+
+// 📀 Create Playlist Route (The final step after Preview)
+export async function createPlaylistFinal(req, res) {
+  const { prompt, length, songs } = req.body;
+  
+  // For now, we'll return a success message safely. 
+  // Later, we can integrate this into the Spotify OAuth flow!
+  res.json({
+    message: "Songs generated for manual Spotify creation!",
+    totalTracks: songs.length,
+    playlistUrl: "https://open.spotify.com" 
+  });
+}// 📡 Session Status Endpoint (Heartbeat for persistence)
+export async function getSessionStatus(req, res) {
+  const currentSession = appState.getSession();
+  res.json({
+    isConnected: currentSession.isConnected,
+    user: currentSession.user,
+    job: appState.getJob()
+  });
+}
+
+// 🧹 Clear Session Endpoint (Logout)
+export async function logout(req, res) {
+  appState.clearSession();
+  res.json({ message: "Sesssion cleared successfully." });
 }
 

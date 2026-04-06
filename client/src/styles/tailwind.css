@@ -12,6 +12,11 @@
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    cursor: url('/cursor.svg') 12 12, auto;
+  }
+
+  a, button, [role="button"], input, textarea, select {
+    cursor: url('/cursor.svg') 12 12, pointer !important;
   }
 
   * {
