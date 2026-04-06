@@ -1,27 +1,28 @@
 /**
  * Spotify OAuth `state` is used to carry the user's prompt through the redirect.
+ * Now expanded to carry track length and atmospheric mood too!
  */
 
-export function createPromptState(prompt) {
-  const payload = { prompt };
+export function createPromptState(prompt, length, mood) {
+  const payload = { prompt, length: Number(length), mood };
   return Buffer.from(JSON.stringify(payload)).toString("base64");
 }
 
-export function decodePromptFromState(state, fallbackPrompt) {
-  if (typeof state !== "string" || state.length >= 5000) return fallbackPrompt;
+export function decodeState(state, fallback) {
+  if (typeof state !== "string" || state.length >= 5000) return fallback;
 
   try {
     const decoded = Buffer.from(state, "base64").toString("utf8");
     const parsed = JSON.parse(decoded);
 
-    if (parsed && typeof parsed.prompt === "string" && parsed.prompt.trim()) {
-      return parsed.prompt.trim();
-    }
+    return {
+      prompt: parsed.prompt || fallback.prompt,
+      length: Number(parsed.length) || fallback.length,
+      mood: parsed.mood || fallback.mood
+    };
   } catch {
-    // If state decoding fails, just fall back.
+    return fallback;
   }
-
-  return fallbackPrompt;
 }
 
 export function sanitizePrompt(prompt, fallbackPrompt, maxLen = 200) {
