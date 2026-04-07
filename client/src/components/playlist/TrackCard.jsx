@@ -16,7 +16,7 @@ export function TrackCard({ track, index }) {
       <div className="relative p-6 flex items-center gap-6 overflow-hidden">
         
         {/* Track Number / Index */}
-        <span className="text-[10px] font-black font-mono text-primary/40 group-hover:text-primary transition-colors duration-300">
+        <span className="text-xs font-bold font-mono text-primary/40 group-hover:text-primary transition-colors duration-300">
           {String(index + 1).padStart(2, "0")}
         </span>
 
@@ -27,10 +27,10 @@ export function TrackCard({ track, index }) {
 
         {/* Text Details */}
         <div className="flex-1 min-w-0">
-          <h4 className="text-on-surface font-bold text-lg truncate mb-1">
+          <h4 className="text-on-surface font-bold text-lg truncate mb-0.5">
             {track.title}
           </h4>
-          <p className="text-on-surface-variant/60 text-xs font-semibold uppercase tracking-widest truncate">
+          <p className="text-on-surface-variant/70 text-sm font-bold uppercase tracking-wider truncate">
             {track.artist}
           </p>
         </div>

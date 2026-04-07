@@ -16,7 +16,7 @@ export function LandingTrackPreview({ songs = [], lastParams = {}, onSave }) {
       {/* Header with high-end editorial typography */}
       <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
         <div className="space-y-4">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-[0.2em] animate-pulse">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-[0.2em] animate-pulse">
             <MaterialIcon name="auto_awesome" className="text-sm" />
             AI Synthesis Complete
           </div>
@@ -51,7 +51,7 @@ export function LandingTrackPreview({ songs = [], lastParams = {}, onSave }) {
       </div>
 
       {/* Footer Hint */}
-      <p className="text-center mt-20 text-on-surface-variant/30 text-xs font-bold uppercase tracking-[0.4em]">
+      <p className="text-center mt-20 text-on-surface-variant/40 text-sm font-bold uppercase tracking-[0.3em]">
         End of Transmission
       </p>
     </section>

@@ -5,7 +5,7 @@ export function PromptInput({ value, onChange }) {
   return (
     <div className="group space-y-4">
       {/* Label with specific letter-spacing for that "editorial" look */}
-      <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-primary/80 ml-6">
+      <label className="block text-sm font-bold uppercase tracking-[0.2em] text-primary/80 ml-6">
         The Maestro&apos;s Prompt
       </label>
 

@@ -17,13 +17,13 @@ export function SiteNav({ onNavigate, activePage = "/" }) {
         <div className="flex justify-center gap-16">
           <button 
             onClick={() => onNavigate?.("/")}
-            className={`font-black tracking-[0.3em] text-[10px] uppercase hover:scale-110 transition-all ${activePage === "/" ? "text-primary" : "text-on-surface-variant/40 hover:text-primary"}`}
+            className={`font-bold tracking-[0.2em] text-xs uppercase hover:scale-105 transition-all py-4 px-2 ${activePage === "/" ? "text-primary" : "text-on-surface-variant/60 hover:text-primary"}`}
           >
             Home
           </button>
           <button 
             onClick={() => onNavigate?.("/how-it-works")}
-            className={`font-black tracking-[0.3em] text-[10px] uppercase hover:scale-110 transition-all whitespace-nowrap ${activePage === "/how-it-works" ? "text-primary" : "text-on-surface-variant/40 hover:text-primary"}`}
+            className={`font-bold tracking-[0.2em] text-xs uppercase hover:scale-105 transition-all whitespace-nowrap py-4 px-2 ${activePage === "/how-it-works" ? "text-primary" : "text-on-surface-variant/60 hover:text-primary"}`}
           >
             How it Works
           </button>
@@ -31,7 +31,7 @@ export function SiteNav({ onNavigate, activePage = "/" }) {
 
         {/* 📐 Column 3: Spacer for Balancing the Center */}
         <div className="flex justify-end pr-4 opacity-5 pointer-events-none select-none">
-          <div className="text-[10px] font-black uppercase tracking-[0.4em]">Active</div>
+          <div className="text-xs font-bold uppercase tracking-[0.2em]">Active</div>
         </div>
       </div>
     </nav>
