@@ -85,7 +85,7 @@ export async function callback(req, res) {
     createPlaylistBackground(access_token, prompt, length, mood).catch(console.error);
 
     // 🪄 Instant Return to Frontend with processing flag
-    res.redirect("http://localhost:5173/?processing=true");
+    res.redirect(`${env.FRONTEND_URL}/?processing=true`);
   } catch (error) {
     console.error("FAILED AT STEP:", step, error.message);
     res.status(500).send("Playlist creation failed. Please check the server logs.");

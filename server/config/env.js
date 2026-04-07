@@ -14,5 +14,6 @@ export const env = {
   // Used only when creating the playlist.
   PLAYLIST_NAME: process.env.PLAYLIST_NAME || "My AI Playlist 🎧",
   PLAYLIST_DESCRIPTION: process.env.PLAYLIST_DESCRIPTION || "Created using AI",
+  FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
 };
 
