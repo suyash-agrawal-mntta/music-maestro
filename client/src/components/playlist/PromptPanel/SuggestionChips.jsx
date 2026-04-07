@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 export function SuggestionChips({ suggestions, activeSuggestion, onSelect }) {
   return (
     <div className="flex flex-wrap gap-3 px-4 pt-4">
-      <span className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest mt-2">
+      <span className="text-sm font-bold text-on-surface-variant/50 uppercase tracking-widest mt-2">
         Try:
       </span>
       

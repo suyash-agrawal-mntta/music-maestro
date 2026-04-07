@@ -50,10 +50,10 @@ export function SystemStatusOrb({ success, user, isSaving }) {
         transition={{ duration: isSaving ? 1.5 : 2.8, ease: "easeInOut", repeat: Infinity }}
       />
       <div className="relative text-center px-8 pointer-events-none select-none">
-        <p className={`text-[9px] font-black tracking-[0.4em] uppercase mb-2 ${textColor}`}>
+        <p className={`text-xs font-black tracking-[0.4em] uppercase mb-2 ${textColor}`}>
           {headerText}
         </p>
-        <p className="text-[11px] text-on-surface-variant leading-relaxed font-medium">
+        <p className="text-sm text-on-surface-variant leading-relaxed font-semibold">
           {detailText}
         </p>
       </div>

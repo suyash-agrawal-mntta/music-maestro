@@ -42,7 +42,7 @@ export function HowItWorksPage({ onNavigate }) {
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-6"
+              className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-[0.2em] mb-6"
             >
               <MaterialIcon name="architecture" className="text-sm" />
               The Architecture
@@ -119,7 +119,7 @@ export function HowItWorksPage({ onNavigate }) {
             className="mt-32 text-center"
           >
             <button 
-              onClick={() => onNavigate("landing")}
+              onClick={() => onNavigate("/landing")}
               className="group relative inline-flex items-center justify-center gap-4 px-12 py-6 rounded-full overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-primary to-secondary opacity-10 group-hover:opacity-20 transition-opacity duration-500" />

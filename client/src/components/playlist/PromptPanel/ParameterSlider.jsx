@@ -13,11 +13,11 @@ export function ParameterSlider({
     <div className="space-y-4 group">
       {/* Label and Value Header */}
       <div className="flex justify-between items-center px-4">
-        <label className="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant/60 group-hover:text-on-surface-variant transition-colors duration-300">
+        <label className="text-sm font-bold uppercase tracking-[0.2em] text-on-surface-variant/70 group-hover:text-on-surface transition-colors duration-300">
           {label}
         </label>
-        <span className={`text-sm font-mono font-bold text-primary`}>
-          {value} <span className="opacity-40">{unit}</span>
+        <span className={`text-base font-mono font-bold text-primary`}>
+          {value} <span className="text-sm opacity-40">{unit}</span>
         </span>
       </div>
 
@@ -34,7 +34,7 @@ export function ParameterSlider({
         
         {/* Helper Guide Texts: Slow / Fast */}
         {(minLabel || maxLabel) && (
-          <div className="flex justify-between mt-3 px-1 text-[9px] font-black uppercase tracking-[0.2em] text-on-surface-variant/30">
+          <div className="flex justify-between mt-3 px-1 text-xs font-bold uppercase tracking-[0.2em] text-on-surface-variant/30">
             <span>{minLabel}</span>
             <span>{maxLabel}</span>
           </div>

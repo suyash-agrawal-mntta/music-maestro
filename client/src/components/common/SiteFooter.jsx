@@ -11,11 +11,11 @@ export function SiteFooter({ onNavigate }) {
           
           {/* Identity Section */}
           <div className="space-y-4 text-center md:text-left">
-            <h3 className="text-2xl md:text-3xl font-black text-on-surface tracking-tighter uppercase uppercase">
+            <h3 className="text-2xl md:text-3xl font-black text-on-surface tracking-tighter uppercase leading-none">
               Suyash Agrawal
             </h3>
-            <p className="text-primary font-black tracking-[0.2em] uppercase text-xs">
-              AI/ML Engineer <span className="text-on-surface-variant/40 mx-2">|</span> Full-Stack Developer
+            <p className="text-primary font-bold tracking-[0.2em] uppercase text-sm">
+              AI/ML Engineer <span className="text-on-surface-variant/20 mx-2">|</span> Full-Stack Developer
             </p>
           </div>
 
@@ -70,19 +70,19 @@ export function SiteFooter({ onNavigate }) {
           <div className="flex gap-8">
             <button
               onClick={() => onNavigate?.("/about")} 
-              className="font-bold text-xs tracking-[0.2em] uppercase text-on-surface-variant/60 hover:text-primary transition-colors"
+              className="font-bold text-sm tracking-widest uppercase text-on-surface-variant/60 hover:text-primary transition-colors"
             >
               About Music Maestro
             </button>
             <button 
               onClick={() => onNavigate?.("/privacy")}
-              className="font-bold text-xs tracking-[0.2em] uppercase text-on-surface-variant/60 hover:text-primary transition-colors"
+              className="font-bold text-sm tracking-widest uppercase text-on-surface-variant/60 hover:text-primary transition-colors"
             >
               Privacy & Legal
             </button>
           </div>
 
-          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8 font-bold text-xs tracking-[0.2em] uppercase text-on-surface-variant/40">
+          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8 font-bold text-sm tracking-widest uppercase text-on-surface-variant/40">
             <div>
               Built with <span className="text-primary mx-1">AI</span> + <span className="text-[#1DB954] mx-1">Spotify API</span> 🎧
             </div>

@@ -18,7 +18,7 @@ export function LandingPage({ loading, error, onGenerate, songs, lastParams, suc
         {error && (
           <div className="max-w-xl mx-auto mt-8 px-6 py-4 bg-error/10 border border-error/20 rounded-2xl flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
             <MaterialIcon name="error_outline" className="text-error text-2xl" />
-            <p className="text-error text-xs font-bold uppercase tracking-widest leading-loose">
+            <p className="text-error text-sm font-bold uppercase tracking-widest leading-relaxed">
               {error}
             </p>
           </div>
