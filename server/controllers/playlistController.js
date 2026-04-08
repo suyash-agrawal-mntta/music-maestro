@@ -88,7 +88,7 @@ export async function callback(req, res) {
     res.redirect(`${env.FRONTEND_URL}/?processing=true`);
   } catch (error) {
     console.error("FAILED AT STEP:", step, error.message);
-    res.status(500).send("Playlist creation failed. Please check the server logs.");
+    res.status(500).send(`Maestro Error [Step: ${step}]: ${error.message}${error.response?.data ? ' | Details: ' + JSON.stringify(error.response.data) : ''}`);
   }
 }
 
