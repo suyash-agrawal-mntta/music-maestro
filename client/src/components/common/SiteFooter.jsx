@@ -11,17 +11,38 @@ export function SiteFooter({ onNavigate }) {
           
           {/* Identity Section */}
           <div className="space-y-4 text-center md:text-left">
-            <h3 className="text-2xl md:text-3xl font-black text-on-surface tracking-tighter uppercase leading-none">
-              Suyash Agrawal
-            </h3>
+            <a 
+              href="https://suyash-agrawal-mntta.github.io/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:opacity-80 transition-opacity"
+            >
+              <h3 className="text-2xl md:text-3xl font-black text-on-surface tracking-tighter uppercase leading-none">
+                Suyash Agrawal
+              </h3>
+            </a>
             <p className="text-primary font-bold tracking-[0.2em] uppercase text-sm">
-              AI/ML Engineer <span className="text-on-surface-variant/20 mx-2">|</span> Full-Stack Developer
+              AI Product Manager & Developer
             </p>
           </div>
 
           {/* Social Links Section */}
           <div className="flex flex-col md:flex-row items-center md:justify-end gap-8 md:gap-12">
             
+            <a 
+              href="https://suyash-agrawal-mntta.github.io/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="group flex gap-3 items-center"
+            >
+              <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center border border-on-surface/5 group-hover:bg-primary/10 group-hover:border-primary/20 transition-colors">
+                <span className="text-on-surface-variant group-hover:text-primary transition-colors text-lg font-black font-serif">S</span>
+              </div>
+              <span className="font-bold text-sm tracking-widest uppercase text-on-surface-variant group-hover:text-primary transition-colors">
+                Portfolio
+              </span>
+            </a>
+
             <a 
               href="https://github.com/suyash-agrawal-mntta" 
               target="_blank" 

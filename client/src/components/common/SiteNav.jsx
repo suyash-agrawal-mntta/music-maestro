@@ -30,8 +30,8 @@ export function SiteNav({ onNavigate, activePage = "/" }) {
         </div>
 
         {/* 📐 Column 3: Spacer for Balancing the Center */}
-        <div className="flex justify-end pr-4 opacity-5 pointer-events-none select-none">
-          <div className="text-xs font-bold uppercase tracking-[0.2em]">Active</div>
+        <div className="flex justify-end pr-4 opacity-0 pointer-events-none select-none">
+          {/* Spacer to maintain grid symmetry */}
         </div>
       </div>
     </nav>
